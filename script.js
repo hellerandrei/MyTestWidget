@@ -2,23 +2,43 @@ define(['jquery', 'underscore', 'twigjs'], function ($, _, Twig) {
   var CustomWidget = function () {
     var self = this;
 
-    this.getTemplate = _.bind(function (template, params, callback) {
-      params = (typeof params == 'object') ? params : {};
-      template = template || '';
-
-      return this.render({
-        href: '/templates/' + template + '.twig',
-        base_path: this.params.path,
-        v: this.get_version(),
-        load: callback
-      }, params);
-    }, this);
-
     this.callbacks = {
-      render: function () {
+      render: function () 
+      {
         console.log('render');
+
+        // если открыли карточку сделки
+        if (self.system().area == 'lcard') 
+        {
+          let $widgets_block = $('#widgets_block');
+
+          // если кнопки ещё нет
+          if ($widgets_block.find('#show_products_button').length == 0) 
+          {
+              // путь к файлу стилей виджета
+              let stylePath = self.params.path + '/style.css';
+              // подключаю стили
+              $('head').append('<link href="' + stylePath + '" rel="stylesheet">');
+
+              // добавляю кнопку в правую панель
+              $widgets_block.append(
+                  self.render({ref: '/tmpl/controls/button.twig'}, {
+                      id: 'show_products_button',
+                      text: 'Посмотреть товары'
+                  })
+              );
+          }
+        }
+
         return true;
       },
+      
+      
+      
+      
+      
+      
+      
       init: _.bind(function () {
         console.log('init');
 
