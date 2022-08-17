@@ -19,8 +19,7 @@ define(['jquery', 'underscore', 'twigjs'], function ($, _, Twig) {
               let stylePath = self.params.path + '/style.css';
               // подключаю стили
               $('head').append('<link href="' + stylePath + '" rel="stylesheet">');
-
-              // добавляю кнопку в правую панель
+              
               $widgets_block.append(
                   self.render({ref: '/tmpl/controls/button.twig'}, {
                       id: 'show_products_button',
@@ -30,7 +29,44 @@ define(['jquery', 'underscore', 'twigjs'], function ($, _, Twig) {
           }
         }
 
+        // таблица с товарами
+        self.productsTable = '';
+
+        // строки таблицы с товарами
+        let productRows = '';
+        // получаю товары со своего сервера
+        $.getJSON('https://www.adelaida.ua/wApi.php', 
+        {
+          'action':'get_orders',
+          'lead_id': AMOCRM.data.current_card.id                
+        },
+        
+        function (products) 
+        {
+            if (products.length === 0) 
+            {
+                // если товаров нет
+                productRows += '<tr><td colspan="2">Товаров нет</td></tr>';
+            } 
+            else 
+            {
+                // если есть товары, добавляю их в таблицу
+                for (let product of products) 
+                {
+                    productRows += '<tr><td>' + product.name + '</td><td>' + product.quantity + '</td></tr>';
+                }
+
+                // заголовок таблицы с товарами
+                let thead = '<thead><tr><th>Название</th><th>Количество</th></tr></thead>';
+                // строки таблицы с товарами
+                let tbody = '<tbody>' + productRows + '</tbody>';
+                // таблица с товарами
+                self.productsTable = '<table>' + thead + tbody + '</table>';
+            }
+        });
+
         return true;
+       
       },
       
       

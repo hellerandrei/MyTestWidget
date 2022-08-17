@@ -126,7 +126,7 @@ class WidgetApi
         $data['action'] 		= isset($GGet['action']) 		? trim($GGet['action'])    : null;	 	
         $data['auth_code'] 		= isset($GGet['auth_code']) 	? trim($GGet['auth_code']) : null;   
         $data['list_name'] 		= isset($GGet['list_name']) 	? trim($GGet['list_name']) : null; 
-        $data['leads_id'] 		= isset($GGet['leads_id']) 	    ? trim($GGet['leads_id'])  : null; 
+        $data['lead_id'] 		= isset($GGet['lead_id']) 	    ? trim($GGet['lead_id'])  : null; 
        
         if ( !in_array( $data['action'], ['get_access_token', 'get_products', 'insert_list', 'get_orders'] ) ) 
         {
@@ -200,10 +200,10 @@ class WidgetApi
                 if ( $this->authHeader == '')
                     return json_encode( ['status' => 'fail', 'action'=>$data['action'], 'message' => 'Access Token is empty'] );                                  
              
-                if ( $data['leads_id'] == '' )
-                    return json_encode( ['status' => 'fail', 'action'=>$data['action'], 'message' => 'Lids id is empty'] );                
+                if ( $data['lead_id'] == '' )
+                    return json_encode( ['status' => 'fail', 'action'=>$data['action'], 'message' => 'Lead id is empty'] );                
 
-                $link       = 'https://' . $this->subdomain . '.amocrm.com/api/v4/leads/' . $data['leads_id'] . '?with=catalog_elements'; 
+                $link       = 'https://' . $this->subdomain . '.amocrm.com/api/v4/leads/' . $data['lead_id'] . '?with=catalog_elements'; 
                 $results    = $this->connect( $link,  $this->authHeader, nil );
                 try
                 {
@@ -247,28 +247,10 @@ class WidgetApi
                 }
 
 
-            break;
+            break;      
+
+
             
-
-
-            case 'get_products':
-                if ( $this->authHeader == '')
-                return json_encode( ['status' => 'fail', 'action'=>$data['action'], 'message' => 'Access Token is empty'] );                           
-                    
-                $lead_id = 1;
-
-                $link    = 'https://' . $this->subdomain . '.amocrm.com/api/v4/leads/' . $lead_id . '?with=catalog_elements';                    
-                $results = $this->connect( $link,  $this->authHeader, nil ); 
-
-                return json_encode
-                ( 
-                    [
-                        'status' 	    => 'success',
-                        'action' 	    => $data['action'],
-                        'results'	    => $results
-                    ]
-                );
-            break;
         }
     }
 
