@@ -1,9 +1,9 @@
 {
     "widget":{
-        "name":"Мой виджет",
+        "name":"Мой MyTestWidget виджет",
         "short_description":"Короткое описание виджета",
         "description":"Полное описание виджета",
-        "tour_description":"Описание виджета"
+        "tour_description":"MyTestWidget Описание виджета"
     },
     "settings":{
         "login":"Логин",

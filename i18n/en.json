@@ -1,9 +1,9 @@
 {
     "widget":{
-        "name":"MyWidget",
+        "name":"MyTestWidget",
         "short_description":"Short description",
         "description":"Full description",
-        "tour_description":"Tour description"
+        "tour_description":"MyTestWidget description"
     },
     "settings":{
         "login":"User login",

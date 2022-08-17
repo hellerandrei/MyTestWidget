@@ -1,7 +1,7 @@
 {
   "widget": {
-    "name": "MyTestWidget",
-    "description": "My test Widget Description",
+    "name": "widget.name",
+    "description": "widget.description",
     "short_description": "widget.short_description",
     "version": "1.0.1",
     "interface_version": 2,
@@ -12,8 +12,8 @@
     ],
     "installation": true,
     "support": {
-      "link": "https://www.adelaida.ua",
-      "email": "admin@adelaida.ua"
+      "link": "https://github.com/hellerandrei/MyTestWidget",
+      "email": "heller.andrei.1985@gmail.com"
     }
   },
   "locations": [
