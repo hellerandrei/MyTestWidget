@@ -5,54 +5,61 @@ class WidgetApi
     private $subdomain        = 'hellerandrei1985';
     private $client_id        = '87b99d22-4c6c-4a17-978b-6ef26af05f5e';
     private $client_secret    = 'yGloysW6IvlG9TfYgaVKiFitCu14cuEV8xIQj8GzNRejbgQaXEk5J1NMvQSykgid';   
-    private $redirect_uri     = 'https://adelaida.ua';   
+    private $redirect_uri     = 'https://adelaida.ua';  
+    private $authHeader       = '';
+    private $filename         = 'includes/accessToken.txt';
     
     /**
      * Saving an access token to a file	 	  
      */
     private function saveAccessToken( $data = '' )
     {		
-        $filename 	= 'includes/accessToken.txt';			
-        file_put_contents($filename, $data, LOCK_EX);
+        $filename 	= '';			
+        file_put_contents( $this->filename, $data, LOCK_EX );
+    }
+
+    /**
+     * Reading an access token to a file	 	  
+     */
+    private function readAccessToken()
+    {	        			
+        return file_get_contents( $this->filename );
     }
     
+    
+
     /**
-     * Get an access token	 	  
+     * Connect to amoCRM 	  
      */
+    private function connect( $link, $headers, $postData )
+    {        
+        // echo $link.";\n";
+        $headers[] = 'Content-Type:application/json';
+        // print_r($headers);
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_USERAGENT, 'amoCRM-oAuth-client/1.0');
+        curl_setopt($curl, CURLOPT_URL, $link);
 
-    private function getAccessToken( $authCode )
-    {
-        /** Соберем данные для запроса */
-        $data = [
-            'client_id'     => $this->client_id,
-            'client_secret' => $this->client_secret,
-            'grant_type'    => 'authorization_code',
-            'code'          => $authCode,
-            'redirect_uri'  => $this->redirect_uri
-        ];
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        
+        curl_setopt($curl, CURLOPT_HEADER, false);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 1);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);        
 
-        $link = 'https://' . $this->subdomain . '.amocrm.com/oauth2/access_token'; //Формируем URL для запроса
+        if ( is_array($postData) )
+        {            
+            // print_r($postData);
+            curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'POST');
+            curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($postData));
+        }
+        $out    = curl_exec($curl);
+        $code   = curl_getinfo($curl, CURLINFO_HTTP_CODE);   
 
-        /**
-         * Нам необходимо инициировать запрос к серверу.
-         * Воспользуемся библиотекой cURL (поставляется в составе PHP).
-         * Вы также можете использовать и кроссплатформенную программу cURL, если вы не программируете на PHP.
-         */
-        $curl = curl_init(); //Сохраняем дескриптор сеанса cURL
-        /** Устанавливаем необходимые опции для сеанса cURL  */
-        curl_setopt($curl,CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl,CURLOPT_USERAGENT,'amoCRM-oAuth-client/1.0');
-        curl_setopt($curl,CURLOPT_URL, $link);
-        curl_setopt($curl,CURLOPT_HTTPHEADER,['Content-Type:application/json']);
-        curl_setopt($curl,CURLOPT_HEADER, false);
-        curl_setopt($curl,CURLOPT_CUSTOMREQUEST, 'POST');
-        curl_setopt($curl,CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($curl,CURLOPT_SSL_VERIFYPEER, 1);
-        curl_setopt($curl,CURLOPT_SSL_VERIFYHOST, 2);
-        $out = curl_exec($curl); //Инициируем запрос к API и сохраняем ответ в переменную
-        $code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         curl_close($curl);
-        /** Теперь мы можем обработать ответ, полученный от сервера. Это пример. Вы можете обработать данные своим способом. */
+        
+        // print_r($out);
+
         $code = (int)$code;
         $errors = [
             400 => 'Bad request',
@@ -64,41 +71,74 @@ class WidgetApi
             503 => 'Service unavailable',
         ];
 
+        if ($code < 200 || $code > 204)
+        {
+            $hint = isset($errors[$code]) ? $code. ' -> '. $errors[$code] : $code. ' -> Undefined error';
+            return (['hint' => $hint]);
+        }
+       
         try
         {
-            $response = json_decode( $out, true );       
-            // $access_token = $response['access_token']; 
-            return $response;
+            return json_decode( $out, true );           
         }
         catch(Exception $e)
         {
-            return ([]);
+            return (['hint' => $e->getMessage()]);
         }
+
+    }
+    
+    
+    /**
+     * Get an access token	 	  
+     */     
+    private function getAccessToken( $authCode )
+    {
+        /** Соберем данные для запроса */
+        $data = [
+            'client_id'     => $this->client_id,
+            'client_secret' => $this->client_secret,
+            'grant_type'    => 'authorization_code',
+            'code'          => $authCode,
+            'redirect_uri'  => $this->redirect_uri
+        ];
+
+        $link = 'https://' . $this->subdomain . '.amocrm.com/oauth2/access_token'; 
+        
+        $result = $this->connect( $link, '', $data );        
+        return $result;
+       
 
         /**
          * Данные получаем в формате JSON, поэтому, для получения читаемых данных,
          * нам придётся перевести ответ в формат, понятный PHP
-         */
-               
-        
-        
+         */            
 
         // $refresh_token = $response['refresh_token']; //Refresh токен
         // $token_type = $response['token_type']; //Тип токена
         // $expires_in = $response['expires_in']; //Через сколько действие токена истекает
-    }	
-                
+    }	                
                 
     public function handler($GGet)
     {
         $data = array();        				
        
-        $data['action'] 		= isset($GGet['action']) 		? trim($GGet['action']) : null;	 	
-        $data['auth_code'] 		= isset($GGet['auth_code']) 	? trim($GGet['auth_code']) : null; 
+        $data['action'] 		= isset($GGet['action']) 		? trim($GGet['action'])    : null;	 	
+        $data['auth_code'] 		= isset($GGet['auth_code']) 	? trim($GGet['auth_code']) : null;   
+        $data['list_name'] 		= isset($GGet['list_name']) 	? trim($GGet['list_name']) : null; 
+        $data['leads_id'] 		= isset($GGet['leads_id']) 	    ? trim($GGet['leads_id'])  : null; 
        
-        if( $data['action'] != 'get_access_token' && $data['action'] != 'read_leads' )
+        if ( !in_array( $data['action'], ['get_access_token', 'get_products', 'insert_list', 'get_orders'] ) ) 
         {
             return json_encode( ['status' => 'fail','message' => 'This Action is Invalid'] );            
+        }
+
+        // Пытаемся прочитать ранее сохраненный токен для работы с api crm.
+        if ( $this->authHeader == '' )
+        {    
+            $token = $this->readAccessToken();
+            if ( $token != '' )
+                $this->authHeader = ['Authorization: Bearer ' . $this->readAccessToken()];            
         }
 
         switch($data['action'])
@@ -117,7 +157,9 @@ class WidgetApi
                 
                 if ( $results['access_token'] != '' )
                 {
-                    return json_encode( 
+                    $this->saveAccessToken($results['access_token']);
+                    return json_encode
+                    ( 
                         [
                             'status' 	    => 'success',
                             'action' 	    => $data['action'],
@@ -130,6 +172,103 @@ class WidgetApi
             break;
 
 
+            case 'insert_list':
+                if ( $this->authHeader == '')
+                    return json_encode( ['status' => 'fail', 'action'=>$data['action'], 'message' => 'Access Token is empty'] );                                  
+             
+                if ( $data['list_name'] == '' )
+                    return json_encode( ['status' => 'fail', 'action'=>$data['action'], 'message' => 'List name is empty'] );                
+
+                $catalogs['add'] = [['name' => $data['list_name'] ]];
+                
+                $link    = 'https://' . $this->subdomain . '.amocrm.com/api/v2/catalogs';                        
+                $results = $this->connect( $link,  $this->authHeader, $catalogs ); 
+
+                return json_encode
+                ( 
+                    [
+                        'status'    => 'success',
+                        'action' 	=> $data['action'],
+                        'results'   => $results
+                    ]
+                );
+            break;
+
+
+
+            case 'get_orders':
+                if ( $this->authHeader == '')
+                    return json_encode( ['status' => 'fail', 'action'=>$data['action'], 'message' => 'Access Token is empty'] );                                  
+             
+                if ( $data['leads_id'] == '' )
+                    return json_encode( ['status' => 'fail', 'action'=>$data['action'], 'message' => 'Lids id is empty'] );                
+
+                $link       = 'https://' . $this->subdomain . '.amocrm.com/api/v4/leads/' . $data['leads_id'] . '?with=catalog_elements'; 
+                $results    = $this->connect( $link,  $this->authHeader, nil );
+                try
+                {
+                    $products   = $results['_embedded']['catalog_elements'];
+                    
+                    $i = 0;
+                    foreach( $products as $product )
+                    {
+                        $catalog_id     = $product['metadata']['catalog_id'];                
+                        $product_id     = $product['id'];
+                        $quantity       = $product['metadata']['quantity'];
+
+                        $link           = 'https://' . $this->subdomain . '.amocrm.com/api/v4/catalogs/' . $catalog_id . '/elements/' . $product_id;
+                        $results        = $this->connect( $link,  $this->authHeader, nil );
+                        $product_name   = $results['name']; 
+                        
+                        $orders[$i]['name']       = $product_name;
+                        $orders[$i]['quantity']   = $quantity; 
+                        $i++;                   
+                    }                
+
+                    return json_encode
+                    ( 
+                        [
+                            'status' 	    => 'success',
+                            'action' 	    => $data['action'],
+                            'orders'	    => $orders
+                        ]
+                    );
+                }
+                catch(Exception $e)
+                {
+                    return json_encode
+                    ( 
+                        [
+                            'status' 	    => 'fail',
+                            'action' 	    => $data['action'],
+                            'message'	    => $e->getMessage()
+                        ]
+                    );
+                }
+
+
+            break;
+            
+
+
+            case 'get_products':
+                if ( $this->authHeader == '')
+                return json_encode( ['status' => 'fail', 'action'=>$data['action'], 'message' => 'Access Token is empty'] );                           
+                    
+                $lead_id = 1;
+
+                $link    = 'https://' . $this->subdomain . '.amocrm.com/api/v4/leads/' . $lead_id . '?with=catalog_elements';                    
+                $results = $this->connect( $link,  $this->authHeader, nil ); 
+
+                return json_encode
+                ( 
+                    [
+                        'status' 	    => 'success',
+                        'action' 	    => $data['action'],
+                        'results'	    => $results
+                    ]
+                );
+            break;
         }
     }
 
