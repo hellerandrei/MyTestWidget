@@ -3,11 +3,11 @@
 class WidgetApi
 {
     private $subdomain        = 'hellerandrei1985';
-    private $client_id        = '87b99d22-4c6c-4a17-978b-6ef26af05f5e';
-    private $client_secret    = 'yGloysW6IvlG9TfYgaVKiFitCu14cuEV8xIQj8GzNRejbgQaXEk5J1NMvQSykgid';   
-    private $redirect_uri     = 'https://adelaida.ua';  
+    private $client_id        = 'ca43a219-234f-424e-b8d3-682d7065ceaa';
+    private $client_secret    = 'trqIETfL7vkYjdbwsfqjAIttiScZCwJ7hTFJ79KELiomDg4VaxXfV59Ksv6xwhhM';   
+    private $redirect_uri     = 'https://www.adelaida.ua';  
     private $authHeader       = '';
-    private $filename         = 'includes/accessToken.txt';
+    private $filename         = 'accessToken.txt';
     
     /**
      * Saving an access token to a file	 	  
@@ -105,18 +105,8 @@ class WidgetApi
 
         $link = 'https://' . $this->subdomain . '.amocrm.com/oauth2/access_token'; 
         
-        $result = $this->connect( $link, '', $data );        
+        $result = $this->connect( $link, [], $data );        
         return $result;
-       
-
-        /**
-         * Данные получаем в формате JSON, поэтому, для получения читаемых данных,
-         * нам придётся перевести ответ в формат, понятный PHP
-         */            
-
-        // $refresh_token = $response['refresh_token']; //Refresh токен
-        // $token_type = $response['token_type']; //Тип токена
-        // $expires_in = $response['expires_in']; //Через сколько действие токена истекает
     }	                
                 
     public function handler($GGet)
@@ -146,6 +136,7 @@ class WidgetApi
             default;
             break;
 
+            // Получение постоянного access token для работы с api
             case 'get_access_token':                  
                 
                 if($data['auth_code'] == '')
@@ -157,6 +148,7 @@ class WidgetApi
                 
                 if ( $results['access_token'] != '' )
                 {
+                    // Созраняем в файл
                     $this->saveAccessToken($results['access_token']);
                     return json_encode
                     ( 
@@ -172,6 +164,7 @@ class WidgetApi
             break;
 
 
+            // Добавление списка по названию
             case 'insert_list':
                 if ( $this->authHeader == '')
                     return json_encode( ['status' => 'fail', 'action'=>$data['action'], 'message' => 'Access Token is empty'] );                                  
@@ -196,6 +189,7 @@ class WidgetApi
 
 
 
+            // Получение товаров и их отправка в crm
             case 'get_orders':
                 if ( $this->authHeader == '')
                     return json_encode( ['status' => 'fail', 'action'=>$data['action'], 'message' => 'Access Token is empty'] );                                  
@@ -205,6 +199,7 @@ class WidgetApi
 
                 $link       = 'https://' . $this->subdomain . '.amocrm.com/api/v4/leads/' . $data['lead_id'] . '?with=catalog_elements'; 
                 $results    = $this->connect( $link,  $this->authHeader, nil );
+                
                 try
                 {
                     $products   = $results['_embedded']['catalog_elements'];
