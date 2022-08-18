@@ -1,5 +1,6 @@
 <?php
 
+// Класс для работы с api AmoCRM
 class WidgetApi
 {
     private $subdomain        = 'hellerandrei1985';
@@ -9,56 +10,42 @@ class WidgetApi
     private $authHeader       = '';
     private $filename         = 'accessToken.txt';
     
-    /**
-     * Saving an access token to a file	 	  
-     */
+    // Сохранение токена в файл
     private function saveAccessToken( $data = '' )
     {		
         $filename 	= '';			
         file_put_contents( $this->filename, $data, LOCK_EX );
     }
 
-    /**
-     * Reading an access token to a file	 	  
-     */
+    // Чтение токена из файла
     private function readAccessToken()
     {	        			
         return file_get_contents( $this->filename );
     }
     
-    
-
-    /**
-     * Connect to amoCRM 	  
-     */
+    // Подключение к AmoCrm
     private function connect( $link, $headers, $postData )
-    {        
-        // echo $link.";\n";
+    {           
         $headers[] = 'Content-Type:application/json';
-        // print_r($headers);
+       
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_USERAGENT, 'amoCRM-oAuth-client/1.0');
         curl_setopt($curl, CURLOPT_URL, $link);
-
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);        
         curl_setopt($curl, CURLOPT_HEADER, false);
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 1);
         curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);        
 
+        // Если есть post параметры
         if ( is_array($postData) )
-        {            
-            // print_r($postData);
+        {                
             curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'POST');
             curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($postData));
         }
         $out    = curl_exec($curl);
-        $code   = curl_getinfo($curl, CURLINFO_HTTP_CODE);   
-
+        $code   = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         curl_close($curl);
-        
-        // print_r($out);
 
         $code = (int)$code;
         $errors = [
@@ -85,16 +72,13 @@ class WidgetApi
         {
             return (['hint' => $e->getMessage()]);
         }
-
     }
     
     
-    /**
-     * Get an access token	 	  
-     */     
+    // Получение постоянного токена для работы с api AmoCRM  
     private function getAccessToken( $authCode )
     {
-        /** Соберем данные для запроса */
+        // Соберем данные для запроса
         $data = [
             'client_id'     => $this->client_id,
             'client_secret' => $this->client_secret,
@@ -109,6 +93,7 @@ class WidgetApi
         return $result;
     }	                
                 
+    // Основной поток обработки запросов
     public function handler($GGet)
     {
         $data = array();        				
@@ -118,6 +103,7 @@ class WidgetApi
         $data['list_name'] 		= isset($GGet['list_name']) 	? trim($GGet['list_name']) : null; 
         $data['lead_id'] 		= isset($GGet['lead_id']) 	    ? trim($GGet['lead_id'])  : null; 
        
+        // Работаем только с разрешенными методами 
         if ( !in_array( $data['action'], ['get_access_token', 'get_products', 'insert_list', 'get_orders'] ) ) 
         {
             return json_encode( ['status' => 'fail','message' => 'This Action is Invalid'] );            
@@ -163,7 +149,6 @@ class WidgetApi
                     return json_encode( ['status' => 'fail','message' => 'Access Token is empty', 'hint' => $results['hint'] ] );                
             break;
 
-
             // Добавление списка по названию
             case 'insert_list':
                 if ( $this->authHeader == '')
@@ -187,8 +172,6 @@ class WidgetApi
                 );
             break;
 
-
-
             // Получение товаров и их отправка в crm
             case 'get_orders':
                 if ( $this->authHeader == '')
@@ -199,7 +182,7 @@ class WidgetApi
 
                 $link       = 'https://' . $this->subdomain . '.amocrm.com/api/v4/leads/' . $data['lead_id'] . '?with=catalog_elements'; 
                 $results    = $this->connect( $link,  $this->authHeader, nil );
-                
+
                 try
                 {
                     $products   = $results['_embedded']['catalog_elements'];
@@ -211,10 +194,12 @@ class WidgetApi
                         $product_id     = $product['id'];
                         $quantity       = $product['metadata']['quantity'];
 
-                        $link           = 'https://' . $this->subdomain . '.amocrm.com/api/v4/catalogs/' . $catalog_id . '/elements/' . $product_id;
+                        // Делаем еще один запрос, для получения имени продукта
+                        $link           = 'https://' . $this->subdomain . '.amocrm.com/api/v4/catalogs/' . $catalog_id . '/elements/' . $product_id;                        
                         $results        = $this->connect( $link,  $this->authHeader, nil );
                         $product_name   = $results['name']; 
                         
+                        // Подготовленные данные для отправки в CRM 
                         $orders[$i]['name']       = $product_name;
                         $orders[$i]['quantity']   = $quantity; 
                         $i++;                   
@@ -241,21 +226,18 @@ class WidgetApi
                         ]
                     );
                 }
-
-
-            break;      
-
-
-            
+            break;            
         }
     }
 
 }
         
+// Заголовки
 header('Content-Type: application/json; charset=utf-8');
 header('content-encoding: gzip');
 header('Access-Control-Allow-Origin: *');
 
+// gzip
 ob_start("ob_gzhandler");
        
     $connection = new WidgetApi();		
