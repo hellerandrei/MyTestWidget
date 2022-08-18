@@ -1,9 +1,9 @@
 {
     "widget":{
-        "name":"MyTestWidget",
-        "short_description":"Short description",
-        "description":"Full description",
-        "tour_description":"MyTestWidget description"
+        "name":"Product Widget",
+        "short_description":"Displaying products",
+        "description":"Widget for displaying products for a specific deal",
+        "tour_description":"Widget for displaying products for a specific deal"
     },
     "settings":{
         "login":"User login",

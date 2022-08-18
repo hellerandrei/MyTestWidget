@@ -1,9 +1,9 @@
 {
     "widget":{
-        "name":"Мой MyTestWidget виджет",
-        "short_description":"Короткое описание виджета",
-        "description":"Полное описание виджета",
-        "tour_description":"MyTestWidget Описание виджета"
+        "name":"Тетсовый виджет",
+        "short_description":"Товары для сделок",
+        "description":"Показывает в модальном окне, список товаров по конкретной сделке",
+        "tour_description":"Список товаров по конкретной сделке"
     },
     "settings":{
         "login":"Логин",

@@ -230,6 +230,7 @@ class WidgetApi
                         [
                             'status' 	    => 'success',
                             'action' 	    => $data['action'],
+                            'lead_id'       => $data['lead_id'],
                             'orders'	    => $orders
                         ]
                     );
@@ -258,6 +259,7 @@ class WidgetApi
         
 header('Content-Type: application/json; charset=utf-8');
 header('content-encoding: gzip');
+header('Access-Control-Allow-Origin: *');
 
 ob_start("ob_gzhandler");
        
